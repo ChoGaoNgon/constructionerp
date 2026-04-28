@@ -12,26 +12,36 @@ export default function ProjectDetailPage() {
   const router = useRouter();
   const [project, setProject] = useState<any>(null);
   const [reports, setReports] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     async function fetchData() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabase.from('users').select('*').eq('id', session.user.id).single();
+        if (profile) setCurrentUser(profile);
+      }
+
       const { data: pData } = await supabase
         .from('projects')
         .select(`
           *,
           commander:users!projects_commander_id_fkey(name),
           director:users!projects_director_id_fkey(name),
-          reports:daily_reports(progress_percent, actual_cost)
+          reports:daily_reports(progress_percent, actual_cost, date, created_at)
         `)
         .eq('id', params.id)
+        .eq('is_deleted', false)
         .single();
 
       if (pData) {
+        const sortedReports = pData.reports && pData.reports.length > 0 
+          ? [...pData.reports].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          : [];
+
         setProject({
           ...pData,
-          actual_progress: pData.reports && pData.reports.length > 0 
-            ? Math.max(0, ...pData.reports.map((r: any) => typeof r.progress_percent === 'number' ? r.progress_percent : 0)) 
-            : 0,
+          actual_progress: sortedReports.length > 0 ? (sortedReports[0].progress_percent || 0) : 0,
           actual_cost: pData.reports 
             ? pData.reports.reduce((acc: number, r: any) => acc + (typeof r.actual_cost === 'number' ? r.actual_cost : 0), 0) 
             : 0,
@@ -44,12 +54,14 @@ export default function ProjectDetailPage() {
         .from('daily_reports')
         .select('*')
         .eq('project_id', params.id)
-        .order('date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (rData) setReports(rData);
     }
     fetchData();
   }, [params.id]);
+
+  const isFinancialAuthorized = currentUser?.role === 'admin' || currentUser?.role === 'accountant';
 
   if (!project) return <div className="p-8">Đang tải chi tiết...</div>;
 
@@ -101,20 +113,22 @@ export default function ProjectDetailPage() {
 
         {/* Financial Info */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-           <Card label="Ngân sách xây dựng" icon={DollarSign}>
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="p-4 bg-surface-container-low rounded-lg border border-outline-variant">
-                   <p className="text-[9px] font-bold text-on-surface-variant tracking-widest uppercase">Dự kiến</p>
-                   <p className="text-xl font-bold text-primary">${((project.planned_cost || 0)/1000).toFixed(0)}k</p>
+           {isFinancialAuthorized && (
+             <Card label="Ngân sách xây dựng" icon={DollarSign}>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="p-4 bg-surface-container-low rounded-lg border border-outline-variant">
+                     <p className="text-[9px] font-bold text-on-surface-variant tracking-widest uppercase">Dự kiến</p>
+                     <p className="text-xl font-bold text-primary">${(project.planned_cost || 0).toLocaleString()}</p>
+                  </div>
+                  <div className="p-4 bg-surface-container-low rounded-lg border border-outline-variant">
+                     <p className="text-[9px] font-bold text-on-surface-variant tracking-widest uppercase">Thực tế</p>
+                     <p className={cn("text-xl font-bold", (project.actual_cost || 0) > (project.planned_cost || 0) ? 'text-error' : 'text-primary')}>
+                       ${(project.actual_cost || 0).toLocaleString()}
+                     </p>
+                  </div>
                 </div>
-                <div className="p-4 bg-surface-container-low rounded-lg border border-outline-variant">
-                   <p className="text-[9px] font-bold text-on-surface-variant tracking-widest uppercase">Thực tế</p>
-                   <p className={cn("text-xl font-bold", (project.actual_cost || 0) > (project.planned_cost || 0) ? 'text-error' : 'text-primary')}>
-                     ${((project.actual_cost || 0)/1000).toFixed(0)}k
-                   </p>
-                </div>
-              </div>
-           </Card>
+             </Card>
+           )}
 
            <Card label="Biến động tiến độ" icon={TrendingUp}>
               <div className="mt-4 space-y-4">
@@ -137,15 +151,22 @@ export default function ProjectDetailPage() {
                     <p className="text-[10px] text-on-surface-variant font-medium">Ghi nhận hiện trường</p>
                   </div>
                   <div className="md:col-span-2 flex flex-col items-center">
+                    <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Tiến độ</p>
                     <div className="w-10 h-10 rounded-full border-2 border-primary flex items-center justify-center text-xs font-black text-primary">
                       {r.progress_percent}%
                     </div>
                   </div>
-                  <div className="md:col-span-4">
+                  {isFinancialAuthorized && (
+                    <div className="md:col-span-2 flex flex-col items-center">
+                      <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Chi phí</p>
+                      <p className="text-sm font-bold text-primary">${(r.actual_cost || 0).toLocaleString()}</p>
+                    </div>
+                  )}
+                  <div className={cn(isFinancialAuthorized ? "md:col-span-3" : "md:col-span-4")}>
                     <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Vấn đề phát sinh</p>
                     <p className="text-xs text-on-surface italic">{r.issues || 'Không có vấn đề.'}</p>
                   </div>
-                  <div className="md:col-span-4">
+                  <div className={cn(isFinancialAuthorized ? "md:col-span-3" : "md:col-span-4")}>
                     <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Đề xuất chiến lược</p>
                     <p className="text-xs text-on-surface font-medium">{r.suggestions || 'Duy trì trạng thái hiện tại.'}</p>
                   </div>

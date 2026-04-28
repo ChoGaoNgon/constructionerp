@@ -66,7 +66,7 @@ export default function NewReportPage() {
         if (profile) setCurrentUser(profile);
       }
 
-      const { data: pData } = await supabase.from('projects').select('*');
+      const { data: pData } = await supabase.from('projects').select('*').eq('is_deleted', false);
       if (pData) {
         setProjects(pData);
         setFormData(prev => ({ ...prev, project_id: pData[0]?.id || '' }));
@@ -74,6 +74,8 @@ export default function NewReportPage() {
     }
     init();
   }, []);
+
+  const isFinancialAuthorized = currentUser?.role === 'admin' || currentUser?.role === 'accountant';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,15 +144,17 @@ export default function NewReportPage() {
                   className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary" 
                  />
               </div>
-              <div className="bg-white p-6 rounded-xl border border-outline-variant">
-                 <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4 block">Nhập chi phí thực tế ($)</label>
-                 <input 
-                  type="number" 
-                  value={formData.actual_cost}
-                  onChange={e => setFormData({...formData, actual_cost: parseInt(e.target.value)})}
-                  className="w-full bg-surface-container-low p-3 rounded-lg border-none focus:ring-2 focus:ring-primary outline-none text-sm font-bold"
-                 />
-              </div>
+              {isFinancialAuthorized && (
+                <div className="bg-white p-6 rounded-xl border border-outline-variant">
+                   <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4 block">Nhập chi phí thực tế ($)</label>
+                   <input 
+                    type="number" 
+                    value={formData.actual_cost}
+                    onChange={e => setFormData({...formData, actual_cost: parseInt(e.target.value)})}
+                    className="w-full bg-surface-container-low p-3 rounded-lg border-none focus:ring-2 focus:ring-primary outline-none text-sm font-bold"
+                   />
+                </div>
+              )}
            </div>
 
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -225,10 +229,12 @@ export default function NewReportPage() {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Chi phí ($)</p>
-                        <p className="text-sm font-bold">${h.actual_cost.toLocaleString()}</p>
-                      </div>
+                      {isFinancialAuthorized && (
+                        <div>
+                          <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Chi phí ($)</p>
+                          <p className="text-sm font-bold">${h.actual_cost?.toLocaleString() || 0}</p>
+                        </div>
+                      )}
                       <div>
                         <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Nhân lực</p>
                         <p className="text-sm font-bold">{h.manpower} người</p>

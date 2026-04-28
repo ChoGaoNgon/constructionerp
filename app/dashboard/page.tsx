@@ -9,6 +9,7 @@ import NavigationLayout from '@/components/NavigationLayout';
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [criticalProjects, setCriticalProjects] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,6 +28,8 @@ export default function DashboardPage() {
           .eq('id', session.user.id)
           .single();
 
+        if (profile) setCurrentUser(profile);
+
         if (!profile) {
           setError("Tài khoản của bạn chưa được cấp quyền truy cập hệ thống. Vui lòng liên hệ Admin để thêm ID: " + session.user.id + " vào bảng users.");
           return;
@@ -38,7 +41,8 @@ export default function DashboardPage() {
             *,
             director:users!projects_director_id_fkey(name),
             reports:daily_reports(progress_percent, actual_cost)
-          `);
+          `)
+          .eq('is_deleted', false);
 
         if (pError) {
           console.error("Supabase Error:", pError);
@@ -65,6 +69,8 @@ export default function DashboardPage() {
           // Calculate Stats
           const risk_count = processed.filter(p => p.actual_progress < p.planned_progress - 5 || p.actual_cost > p.planned_cost * 1.1).length;
           const warning_count = processed.filter(p => (p.actual_progress >= p.planned_progress - 5 && p.actual_progress < p.planned_progress) || (p.actual_cost > p.planned_cost && p.actual_cost <= p.planned_cost * 1.1)).length;
+          const total_collected = processed.reduce((acc, p) => acc + (typeof p.collected_amount === 'number' ? p.collected_amount : 0), 0);
+          const total_receivable = processed.reduce((acc, p) => acc + (typeof p.receivable_amount === 'number' ? p.receivable_amount : 0), 0);
 
           setStats({
              total_projects: processed.length,
@@ -72,6 +78,8 @@ export default function DashboardPage() {
              warning_count,
              total_planned_cost: processed.reduce((acc, p) => acc + (typeof p.planned_cost === 'number' ? p.planned_cost : 0), 0),
              total_actual_cost: processed.reduce((acc, p) => acc + (typeof p.actual_cost === 'number' ? p.actual_cost : 0), 0),
+             total_collected,
+             total_receivable,
            });
 
           setCriticalProjects(processed.filter(p => p.actual_progress < p.planned_progress - 5 || p.actual_cost > p.planned_cost * 1.1));
@@ -82,6 +90,8 @@ export default function DashboardPage() {
             warning_count: 0,
             total_planned_cost: 0,
             total_actual_cost: 0,
+            total_collected: 0,
+            total_receivable: 0,
           });
         }
       } catch (err: any) {
@@ -106,6 +116,8 @@ export default function DashboardPage() {
 
   if (!stats) return <div className="p-8">Đang tải Dashboard...</div>;
 
+  const isFinancialAuthorized = currentUser?.role === 'admin' || currentUser?.role === 'accountant';
+
   const statusData = [
     { name: 'Bình thường', value: stats.total_projects - stats.risk_count - stats.warning_count, color: '#10b981' },
     { name: 'Cảnh báo', value: stats.warning_count, color: '#f59e0b' },
@@ -125,10 +137,32 @@ export default function DashboardPage() {
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <KpiCard label="Tổng công trình" val={stats.total_projects} sub="Danh mục đang hoạt động" icon={Briefcase} trend="up" />
-          <KpiCard label="Bình thường" val={stats.total_projects - stats.risk_count - stats.warning_count} icon={CheckCircle2} color="text-emerald-600" bgColor="bg-emerald-500" />
-          <KpiCard label="Cảnh báo" val={stats.warning_count} icon={AlertTriangle} color="text-amber-600" bgColor="bg-amber-500" />
-          <KpiCard label="Nguy cơ" val={stats.risk_count} icon={AlertCircle} color="text-error" bgColor="bg-error" />
+          <KpiCard label="Bình thường" val={stats.total_projects - stats.risk_count - stats.warning_count} icon={CheckCircle2} color="text-emerald-600" bgColor="border-l-emerald-500" />
+          <KpiCard label="Cảnh báo" val={stats.warning_count} icon={AlertTriangle} color="text-amber-600" bgColor="border-l-amber-500" />
+          <KpiCard label="Nguy cơ" val={stats.risk_count} icon={AlertCircle} color="text-error" bgColor="border-l-error" />
         </div>
+        
+        {/* Financial Totals */}
+        {isFinancialAuthorized && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <KpiCard 
+              label="Tổng đã thu (Collected)" 
+              val={`$${(stats.total_collected || 0).toLocaleString()}`} 
+              sub="Tổng tiền mặt đã nhận" 
+              icon={DollarSign} 
+              color="text-emerald-600" 
+              bgColor="border-l-emerald-500" 
+            />
+            <KpiCard 
+              label="Tổng phải thu (Receivable)" 
+              val={`$${(stats.total_receivable || 0).toLocaleString()}`} 
+              sub="Phải thu từ khách hàng" 
+              icon={TrendingUp} 
+              color="text-secondary" 
+              bgColor="border-l-secondary" 
+            />
+          </div>
+        )}
 
         {/* Financial Progress */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -153,12 +187,14 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-8">
               <div>
                 <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Ngân sách dự kiến</p>
-                <p className="text-2xl font-black text-primary">${(stats.total_planned_cost/1e6).toFixed(1)}M</p>
+                <p className="text-2xl font-black text-primary">
+                  {isFinancialAuthorized ? `$${(stats.total_planned_cost/1e6).toFixed(1)}M` : '***'}
+                </p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Chi phí thực tế</p>
                 <p className={`text-2xl font-black ${stats.total_actual_cost > stats.total_planned_cost ? 'text-error' : 'text-primary'}`}>
-                  ${(stats.total_actual_cost/1e6).toFixed(1)}M
+                  {isFinancialAuthorized ? `$${(stats.total_actual_cost/1e6).toFixed(1)}M` : '***'}
                 </p>
               </div>
             </div>
@@ -192,7 +228,9 @@ export default function DashboardPage() {
                    <th className="px-6 py-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Công trình</th>
                    <th className="px-6 py-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">PGĐ Phụ trách</th>
                    <th className="px-6 py-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-widest text-center">Tiến độ Trễ</th>
-                   <th className="px-6 py-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Vượt ngân sách</th>
+                   {isFinancialAuthorized && (
+                     <th className="px-6 py-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Vượt ngân sách</th>
+                   )}
                  </tr>
                </thead>
                <tbody className="divide-y divide-outline-variant">
@@ -205,9 +243,11 @@ export default function DashboardPage() {
                          {Math.round(p.actual_progress - p.planned_progress)}%
                        </span>
                      </td>
-                     <td className="px-6 py-4 text-right">
-                        <span className="text-error font-bold">${((p.actual_cost - p.planned_cost)/1000).toFixed(0)}k</span>
-                     </td>
+                     {isFinancialAuthorized && (
+                       <td className="px-6 py-4 text-right">
+                          <span className="text-error font-bold">${((p.actual_cost - p.planned_cost)/1000).toFixed(0)}k</span>
+                       </td>
+                     )}
                    </tr>
                  ))}
                </tbody>
