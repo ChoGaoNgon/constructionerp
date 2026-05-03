@@ -3,11 +3,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Rocket, FileText, Users, Settings, Search, Bell, HelpCircle, Download, LogOut } from 'lucide-react';
+import { LayoutDashboard, Rocket, FileText, Users, Settings, Search, Bell, HelpCircle, Download, LogOut, Briefcase, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { DollarSign } from 'lucide-react';
+import Image from 'next/image';
 
 export default function NavigationLayout({ children, activeTab }: { children: React.ReactNode, activeTab: string }) {
   const router = useRouter();
@@ -17,21 +17,44 @@ export default function NavigationLayout({ children, activeTab }: { children: Re
     async function getUser() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { data: profile } = await supabase.from('users').select('*').eq('id', session.user.id).single();
+        // Updated to use 'employees' table
+        const { data: profile } = await supabase.from('employees').select('*').eq('id', session.user.id).single();
         if (profile) setCurrentUser(profile);
       }
     }
     getUser();
   }, []);
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Bảng điều khiển', icon: LayoutDashboard, href: '/dashboard' },
-    { id: 'projects', label: 'Dự án', icon: Rocket, href: '/projects' },
-    { id: 'reports', label: 'Báo cáo hàng ngày', icon: FileText, href: '/reports/new' },
-    { id: 'personnel', label: 'Nhân sự', icon: Users, href: '/personnel' },
+  const menuSections = [
+    {
+      label: 'Hệ thống',
+      items: [
+        { id: 'dashboard', label: 'Bảng điều khiển', icon: LayoutDashboard, href: '/dashboard' },
+        { id: 'profile', label: 'Hồ sơ cá nhân', icon: Users, href: '/profile' },
+      ]
+    },
+    {
+      label: 'Tổ chức',
+      items: [
+        { id: 'departments', label: 'Phòng ban', icon: Settings, href: '/departments' },
+        { id: 'personnel', label: 'Nhân sự', icon: Users, href: '/personnel' },
+      ]
+    },
+    {
+      label: 'Dự án',
+      items: [
+        { id: 'projects', label: 'Danh sách dự án', icon: Rocket, href: '/projects' },
+        { id: 'project-roles', label: 'Chức danh dự án', icon: Briefcase, href: '/project-roles' },
+        { id: 'reports', label: 'Báo cáo định kỳ', icon: FileText, href: '/reports' },
+      ]
+    },
+    {
+      label: 'Tài chính',
+      items: [
+        { id: 'payments', label: 'Thanh toán', icon: DollarSign, href: '/payments' },
+      ]
+    }
   ];
-
-  const isFinancialAuthorized = currentUser?.role === 'admin' || currentUser?.role === 'accountant';
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -47,36 +70,29 @@ export default function NavigationLayout({ children, activeTab }: { children: Re
           <p className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest mt-1">Bản Supabase</p>
         </div>
         
-        <nav className="flex-1 space-y-1">
-          {menuItems.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              className={cn(
-                "w-full flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors border-r-2",
-                activeTab === item.id 
-                  ? "text-primary bg-surface-container-low border-primary font-bold" 
-                  : "text-on-surface-variant border-transparent hover:bg-surface-container-lowest hover:text-primary"
-              )}
-            >
-              <item.icon className="w-5 h-5" />
-              <span>{item.label}</span>
-            </Link>
+        <nav className="flex-1 space-y-6 overflow-y-auto custom-scrollbar">
+          {menuSections.map((section) => (
+            <div key={section.label} className="space-y-1">
+              <div className="px-6 mb-2">
+                <p className="text-[10px] font-black text-on-surface-variant/50 uppercase tracking-[0.2em]">{section.label}</p>
+              </div>
+              {section.items.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-6 py-2.5 text-sm font-medium transition-all border-r-2",
+                    activeTab === item.id 
+                      ? "text-primary bg-primary/5 border-primary font-bold" 
+                      : "text-on-surface-variant border-transparent hover:bg-surface-container-lowest hover:text-primary"
+                  )}
+                >
+                  <item.icon className={cn("w-4 h-4", activeTab === item.id ? "text-primary" : "text-on-surface-variant/70")} />
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
           ))}
-          {isFinancialAuthorized && (
-            <Link
-              href="/financial"
-              className={cn(
-                "w-full flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors border-r-2",
-                activeTab === 'financial' 
-                  ? "text-primary bg-surface-container-low border-primary font-bold" 
-                  : "text-on-surface-variant border-transparent hover:bg-surface-container-lowest hover:text-primary"
-              )}
-            >
-              <DollarSign className="w-5 h-5" />
-              <span>Quản lý chi phí</span>
-            </Link>
-          )}
         </nav>
 
         <div className="px-4 py-4 border-t border-outline-variant">
@@ -110,11 +126,17 @@ export default function NavigationLayout({ children, activeTab }: { children: Re
             </button>
           </div>
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-black text-primary leading-none">{currentUser?.name || 'Quản trị viên'}</p>
-            <p className="text-[11px] font-bold text-on-surface-variant uppercase mt-0.5">{currentUser?.role || 'Quản lý dự án'}</p>
+            <p className="text-sm font-black text-primary leading-none">{currentUser?.name || 'Đang tải...'}</p>
+            <p className="text-[11px] font-bold text-on-surface-variant uppercase mt-0.5">{currentUser?.system_role || 'Nhân viên'}</p>
           </div>
-          <div className="w-10 h-10 rounded-full border-2 border-surface-container-low bg-surface-container overflow-hidden">
-             <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="p" className="w-full h-full object-cover" />
+          <div className="w-10 h-10 rounded-full border-2 border-surface-container-low bg-surface-container overflow-hidden relative">
+             <Image 
+               src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
+               alt="Profile" 
+               fill 
+               className="object-cover"
+               referrerPolicy="no-referrer"
+             />
           </div>
         </div>
       </header>

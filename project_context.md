@@ -1,86 +1,40 @@
-# Project Context: Construction Management System (Supabase Version)
+# Kiến trúc & Bối cảnh dự án: Hệ thống Quản lý Xây dựng (Sử dụng Supabase)
 
-## 🏗️ Overview
-A real-time construction project monitoring dashboard designed for Project Management Boards (BCH) and Directors (PGD). The system focuses on tracking progress variance, cost health, and daily field reporting.
+## 🏗️ Tổng quan
+Một hệ thống quản lý các dự án xây dựng dựa trên thời gian thực, được thiết kế cho Ban Giám đốc (PGD) và Ban Chỉ huy công trường (BCH). Hệ thống tập trung cung cấp khả năng đánh giá tiến độ, sức khoẻ tài chính dự án, thu hồi các kỳ thanh toán/tạm ứng, cũng như báo cáo hiện trường.
 
-## 🛠️ Technical Stack
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **Backend / DB**: Supabase (PostgreSQL + Auth + Real-time)
-- **State Management**: React Hooks (useState, useEffect)
-- **Deployment**: AI Studio / Cloud Run
+## 🛠️ Trạm công nghệ (Technical Stack)
+- **Framework**: Vue 3 (Composition API) + Vite
+- **Ngôn ngữ**: TypeScript
+- **Giao diện (Styling)**: Tailwind CSS
+- **Icons**: Lucide Vue Next
+- **Backend / Database**: Supabase (PostgreSQL + Auth + Real-time)
+- **Biểu đồ (Charts)**: ApexCharts (vue3-apexcharts)
+- **Triển khai (Deployment)**: AI Studio / Cloud Run
 
-## 📂 Core Requirements & Features
+## 📂 Tính năng & Yêu cầu cốt lõi
 
-### 1. Project Management
-- **Dashboard**: High-level overview of all active projects.
-- **Customizable Grid**: Users can toggle column visibility (Progress, Cost Variance, Receivable, etc.).
-- **Soft Delete**: Admin-only feature to hide projects from the main list without physical deletion.
-- **Dynamic Status**: 
-  - 🔴 **Risk**: Progress lag > 5% or Cost > 110% of budget.
-  - 🟡 **Warning**: Any progress lag or cost over budget.
-  - 🟢 **Normal**: On track.
+### 1. Quản lý Dự án (Project Management)
+- **Bảng điều khiển (Dashboard)**: Tổng quan KPI và thông số các dự án đang hoạt động.
+- **Khởi tạo dữ liệu dự án (Registration)**: Thiết lập hợp đồng, ngân sách, tỷ lệ tạm ứng, lập trước kế hoạch các bước nhảy thanh toán.
+- **Đánh giá tình trạng (Evaluation)**: Dự án có thể được quản lí đánh giá trạng thái thành (AN TOÀN, CẢNH BÁO, RỦI RO) đính kèm các báo cáo ghi chú để dễ nắm bắt những rắc rối khi thi công.
 
-### 2. Personnel Management
-- **Searchable Directory**: Search by name, email, or role (min 4 characters).
-- **Role-based Access**: 
-  - `admin`: Full access, management of users and projects.
-  - `PGD`: Supervisory access, can create/edit projects.
-  - `BCH`: Site commanders, can submit daily reports.
-  - `accountant`: Financial monitoring access.
-- **User Creation**: Automated invite/signup flow with manual database sync for reliability.
+### 2. Nghiệm thu & Phân bổ Tài chính (Financials & Payment Allocation)
+- **Tính toán thông minh**: Sổ cái tự động tính toán tổng dư nợ, tự phân tích ngưỡng thu hồi tạm ứng (VD: Bắt buộc thu hồi khi đạt 80% giá trị hợp đồng), cùng các dữ liệu thu hồi, nghiệm thu lũy kế các kì trước.
+- **Dự toán các kì thanh toán**: Cho phép thiết lập dự toán lịch trình ở quá trình khởi tạo và truy xuất điền tự động khi chốt kỳ thanh toán mà không phải gõ số tài chính lại từ đầu.
 
-### 3. Daily Reports (Timeline)
-- **Role-Based Capture**: 
-  - **BCH (Field Commanders)**: Focus on site activity—submit `progress_percent`, `issues`, and `suggestions`.
-  - **Admin/Accountant**: Responsible for indexing `actual_cost`. This field is hidden from BCH to ensure financial privacy and data integrity.
-- **Latest State**: Project progress reflects the **most recent** report entry based on date.
-- **Cost Accumulation**: Project-level `actual_cost` is dynamically summed from all associated daily reports.
+### 3. Cấp bậc nhân sự & Chức vụ
+- **Quyền theo hệ thống (System Roles)**: Mapping phân quyền điều hướng tổng quát (`ADMIN`, `CEO`, `LEADER`, `STAFF`).
+- **Nhiệm vụ trên dự án (Project Roles)**: Bảng theo ngữ cảnh sẽ gán nhân sự vào vị trí tương ứng (`PGD`, `BCH`, `QS`, `Accountant`) nhằm mục đích thể hiện rõ đầu mối trên hợp đồng.
 
-### 4. Financial Tracking
-- **Financial Management Page**: A dedicated module for Accountants and Admins to log actual costs by project and date without needing the full Daily Report context.
-- **Access Control**: Users with `BCH` or `PGD` roles are restricted from viewing financial health metrics (Planned/Actual Cost, Collected/Receivable) across the dashboard and project details.
-- **Metrics**: 
-  - `planned_cost`: Initial budget.
-  - `actual_cost`: Real-time spending total.
-  - `collected_amount`: Cash inflow.
-  - `receivable_amount`: Pending revenue.
+Để xem thêm luồng diễn giải kỹ thuật và logic nghiệp vụ, hãy xem tài liệu [Chi tiết Nghiệp Vụ](business_detail.md).
 
-### 5. UI & UX Refinements
-- **Searchable Select (Autocomplete)**: Implemented custom React Autocomplete components for project filters to handle large datasets efficiently.
-- **Filter Reset**: Global "Reset" button for quick clearing of search criteria.
-- **Visual Consistency**: Material Design inspired interface with custom Tailwind utility classes for high-density information display.
+## 🗄️ Lược đồ cơ sở dữ liệu (Database Schema)
 
-## 🗄️ Database Schema (Supabase)
-
-### `public.users`
-- `id` (UUID, PK)
-- `email` (Unique)
-- `name` 
-- `role` (BCH, PGD, accountant, admin)
-
-### `public.projects`
-- `id` (Text, PK)
-- `name`
-- `commander_id` (FK to users)
-- `director_id` (FK to users)
-- `planned_progress` (Real)
-- `planned_cost` (BigInt)
-- `collected_amount` (BigInt)
-- `receivable_amount` (BigInt)
-- `is_deleted` (Boolean, default: false)
-
-### `public.daily_reports`
-- `project_id` (FK to projects)
-- `date` (Date)
-- `progress_percent` (Real)
-- `actual_cost` (BigInt)
-- `issues` (Text)
-- `suggestions` (Text)
-
-## 🔐 Security (RLS)
-- Data is secured via PostgreSQL Row Level Security.
-- Policies ensure that only authenticated users with correct roles can write to projects or reports.
-- `Public` users (all authenticated) can read projects/users to ensure the dashboard works for all team members.
+(Vui lòng mở file `SUPABASE_SCHEMA.sql` để xem thêm định nghĩa gốc về lược đồ, triggers và phân tích phân lớp bảo mật dữ liệu RLS)
+- `departments`: Cơ cấu phòng ban hệ thống.
+- `employees`: User (Đồng nhất mapping tài khoản với mục authentication) chứa thông tin vai trò.
+- `projects`: Yếu tố gốc, quản lý ngân sách hợp đồng, giá trị nghiệm thu, thiết lập tỷ lệ và sơ đồ thanh toán trả góp (lưu mảng JSON), trạng thái đánh giá quản trị.
+- `project_roles` & `project_assignments`: Mapping dữ liệu giữa quan hệ nhiều-nhiều gán nhân sự vào dự án với vai trò đặc thù.
+- `payments`: Sổ cái tài chính báo cáo số lượng đợt, số nghiệm thu, tiền thu hồi tạm ứng.
+- `reports`: Bảng nhật ký thời gian đo lường sức khỏe đánh giá của công trường hàng tuần/hàng ngày.
