@@ -7,6 +7,7 @@
           <p class="text-sm text-on-surface-variant font-medium">Quản lý cơ cấu tổ chức công ty</p>
         </div>
         <button 
+          v-if="can('create', 'departments')"
           @click="openModal()"
           class="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-all"
         >
@@ -55,12 +56,14 @@
                   <td class="px-6 py-4 text-right">
                     <div class="flex items-center justify-end gap-2">
                       <button 
+                        v-if="can('update', 'departments')"
                         @click="openModal(dept)"
                         class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                       >
                         <Edit2 class="w-4 h-4" />
                       </button>
                       <button 
+                        v-if="can('delete', 'departments')"
                         @click="deleteDept(dept.id)"
                         class="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-all"
                       >
@@ -117,9 +120,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
 import NavigationLayout from '@/components/NavigationLayout.vue'
 import { Settings, Plus, Edit2, Trash2, Check, X, Search } from 'lucide-vue-next'
+import { usePermissions } from '../composables/usePermissions'
+
+const { can } = usePermissions()
 
 const departments = ref<any[]>([])
 const loading = ref(true)

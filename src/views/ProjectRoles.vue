@@ -7,6 +7,7 @@
            <p class="text-sm text-on-surface-variant font-medium">Danh mục chức vụ thực hiện trong dự án</p>
         </div>
         <button 
+          v-if="can('create', 'project-roles')"
           @click="openModal()"
           class="px-6 py-3 bg-primary text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:-translate-y-0.5 transition-all"
         >
@@ -27,12 +28,14 @@
                  </div>
                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
+                      v-if="can('update', 'project-roles')"
                       @click="openModal(role)"
                       class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg"
                     >
                        <Edit2 class="w-4 h-4" />
                     </button>
                     <button 
+                       v-if="can('delete', 'project-roles')"
                        @click="deleteRole(role.id)"
                        class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg"
                     >
@@ -80,9 +83,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
 import NavigationLayout from '@/components/NavigationLayout.vue'
 import { Briefcase, Plus, Edit2, Trash2, Check, X, Search } from 'lucide-vue-next'
+import { usePermissions } from '../composables/usePermissions'
+
+const { can } = usePermissions()
 
 const roles = ref<any[]>([])
 const loading = ref(true)

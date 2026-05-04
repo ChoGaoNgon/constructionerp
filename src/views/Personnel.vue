@@ -17,6 +17,7 @@
             />
           </div>
           <button 
+            v-if="can('create', 'users')"
             @click="openModal()"
             class="bg-primary text-white px-4 py-3 rounded-xl font-bold text-sm shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2"
           >
@@ -68,6 +69,7 @@
                   </td>
                   <td class="px-6 py-4 text-right">
                     <button 
+                      v-if="can('update', 'users')"
                       @click="openModal(emp)"
                       class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                     >
@@ -186,9 +188,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
 import NavigationLayout from '@/components/NavigationLayout.vue'
 import { Users, Plus, Edit2, Shield, Search, X, Check, Building } from 'lucide-vue-next'
+import { usePermissions } from '../composables/usePermissions'
+
+const { can } = usePermissions()
 
 const employees = ref<any[]>([])
 const departments = ref<any[]>([])

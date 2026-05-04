@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -66,6 +66,12 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('../views/Dashboard.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/settings/permissions',
+      name: 'permissions',
+      component: () => import('../views/Permissions.vue'),
       meta: { requiresAuth: true }
     },
     // Add other routes as they are created

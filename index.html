@@ -9,6 +9,14 @@
     <title>ProForeman - Steel & Stone Construction</title>
   </head>
   <body>
+    <script>
+      window.onerror = function(msg, source, lineno, colno, error) {
+        document.body.innerHTML += `<div style="color:red; background:white; position:fixed; top:50px; left:0; z-index:9999; padding:20px;"><h1>GLOBAL JS ERROR</h1><pre>${msg}</pre><pre>${source}:${lineno}:${colno}</pre></div>`;
+      };
+      window.addEventListener("unhandledrejection", function(promiseRejectionEvent) { 
+        document.body.innerHTML += `<div style="color:red; background:white; position:fixed; top:150px; left:0; z-index:9999; padding:20px;"><h1>UNHANDLED PROMISE</h1><pre>${promiseRejectionEvent.reason}</pre></div>`;
+      });
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

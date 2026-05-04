@@ -18,6 +18,7 @@
                 </select>
              </div>
              <button 
+               v-if="can('create', 'payments')"
                @click="openModal"
                class="px-6 py-3 bg-primary text-white rounded-xl font-bold flex items-center gap-2 shadow-xl hover:-translate-y-0.5 transition-all"
              >
@@ -275,9 +276,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
 import NavigationLayout from '@/components/NavigationLayout.vue'
 import { DollarSign, Plus, Calculator, History, Check, X, ArrowRight, Download, Receipt, TrendingDown } from 'lucide-vue-next'
+import { usePermissions } from '../composables/usePermissions'
+
+const { can } = usePermissions()
 
 const payments = ref<any[]>([])
 const projects = ref<any[]>([])

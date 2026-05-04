@@ -7,6 +7,7 @@
             <p class="text-sm text-on-surface-variant font-medium">Theo dõi tiến độ hợp đồng & tài chính</p>
          </div>
          <button 
+           v-if="can('create', 'projects')"
            @click="isModalOpen = true"
            class="px-6 py-3 bg-primary text-white rounded-xl font-bold flex items-center gap-2 shadow-xl shadow-primary/20 hover:-translate-y-0.5 transition-all"
          >
@@ -48,7 +49,7 @@
               </div>
               <div class="flex items-start justify-between gap-4 min-h-[3.5rem]">
                  <h3 class="text-lg font-black text-primary uppercase leading-tight line-clamp-2">{{ p.name }}</h3>
-                 <button @click.prevent="deleteProject(p.id)" class="text-red-500/50 hover:text-red-600 hover:bg-red-50 p-2 rounded-full transition-colors" title="Xóa dự án">
+                 <button v-if="can('delete', 'projects')" @click.prevent="deleteProject(p.id)" class="text-red-500/50 hover:text-red-600 hover:bg-red-50 p-2 rounded-full transition-colors" title="Xóa dự án">
                     <Trash2 class="w-4 h-4" />
                  </button>
               </div>
@@ -217,9 +218,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
 import NavigationLayout from '@/components/NavigationLayout.vue'
 import { Rocket, Plus, Search, Calendar, DollarSign, ArrowRight, X, Check, Users, Trash2 } from 'lucide-vue-next'
+import { usePermissions } from '../composables/usePermissions'
+
+const { can } = usePermissions()
 
 const projects = ref<any[]>([])
 const loading = ref(true)

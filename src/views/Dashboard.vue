@@ -151,7 +151,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
 import { Briefcase, AlertCircle, TrendingUp, DollarSign, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck } from 'lucide-vue-next'
 import NavigationLayout from '@/components/NavigationLayout.vue'
 import DashboardChart from '@/components/DashboardChart.vue'
@@ -190,9 +190,14 @@ onMounted(async () => {
     }
 
     // Fetch Projects + Financials
-    const { data: projects } = await supabase.from('projects')
+    const { data: projects, error: projectsError } = await supabase.from('projects')
       .select('*, payments(completed_value, recovered_amount), investor_payments(amount)')
       .eq('is_deleted', false)
+
+    if (projectsError) {
+      error.value = projectsError.message
+      return
+    }
 
     if (projects) {
       const processed = projects.map(p => {

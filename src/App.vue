@@ -3,5 +3,17 @@
 </template>
 
 <script setup lang="ts">
-// Root component
+import { onMounted } from 'vue'
+import { supabase } from '../lib/supabase'
+import { usePermissions } from './composables/usePermissions'
+
+const { loadPermissions } = usePermissions()
+
+onMounted(() => {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session) {
+      await loadPermissions()
+    }
+  })
+})
 </script>

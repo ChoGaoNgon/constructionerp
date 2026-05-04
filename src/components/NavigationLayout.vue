@@ -99,12 +99,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
-  LayoutDashboard, Rocket, FileText, Users, Settings, Search, Bell, HelpCircle, Download, LogOut, Briefcase, Menu 
+  LayoutDashboard, Rocket, FileText, Users, Settings, Search, Bell, HelpCircle, Download, LogOut, Briefcase, Menu, Shield 
 } from 'lucide-vue-next'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
+import { usePermissions } from '../composables/usePermissions'
+
+const { can, isSuperAdmin, loadPermissions } = usePermissions()
 
 defineProps<{
   activeTab: string
@@ -114,37 +117,51 @@ const router = useRouter()
 const currentUser = ref<any>(null)
 const isSidebarCollapsed = ref(false)
 
-const menuSections = [
+const allMenuSections = [
   {
     label: 'Hệ thống',
     items: [
-      { id: 'dashboard', label: 'Bảng điều khiển', icon: LayoutDashboard, href: '/dashboard' },
+      { id: 'dashboard', label: 'Bảng điều khiển', icon: LayoutDashboard, href: '/dashboard', resource: 'dashboard' },
+      { id: 'permissions', label: 'Phân quyền', icon: Shield, href: '/settings/permissions', resource: 'permissions' },
     ]
   },
   {
     label: 'Tổ chức',
     items: [
-      { id: 'departments', label: 'Phòng ban', icon: Settings, href: '/departments' },
-      { id: 'personnel', label: 'Nhân sự', icon: Users, href: '/personnel' },
+      { id: 'departments', label: 'Phòng ban', icon: Settings, href: '/departments', resource: 'departments' },
+      { id: 'personnel', label: 'Nhân sự', icon: Users, href: '/personnel', resource: 'users' },
     ]
   },
   {
     label: 'Dự án',
     items: [
-      { id: 'projects', label: 'Danh sách dự án', icon: Rocket, href: '/projects' },
-      { id: 'project-roles', label: 'Chức danh dự án', icon: Briefcase, href: '/project-roles' },
-      { id: 'reports', label: 'Báo cáo định kỳ', icon: FileText, href: '/reports' },
+      { id: 'projects', label: 'Danh sách dự án', icon: Rocket, href: '/projects', resource: 'projects' },
+      { id: 'project-roles', label: 'Chức danh dự án', icon: Briefcase, href: '/project-roles', resource: 'project-roles' },
+      { id: 'reports', label: 'Báo cáo định kỳ', icon: FileText, href: '/reports', resource: 'reports' },
     ]
   },
   {
     label: 'Tài chính',
     items: [
-      { id: 'payments', label: 'Thanh toán', icon: Download, href: '/payments' },
+      { id: 'payments', label: 'Thanh toán', icon: Download, href: '/payments', resource: 'payments' },
     ]
   }
 ]
 
+const menuSections = computed(() => {
+  return allMenuSections.map(section => ({
+    ...section,
+    items: section.items.filter(item => {
+      // Allow if they have 'read' perms or are super admin
+      return can('read', item.resource)
+    })
+  })).filter(section => section.items.length > 0)
+})
+
 onMounted(async () => {
+  // Ensure permissions are loaded
+  await loadPermissions()
+  
   const { data: { session } } = await supabase.auth.getSession()
   if (session) {
     const { data: profile } = await supabase.from('employees').select('*').eq('id', session.user.id).single()

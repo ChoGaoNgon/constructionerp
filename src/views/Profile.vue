@@ -102,7 +102,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
 import NavigationLayout from '@/components/NavigationLayout.vue'
 import { ShieldCheck, Mail, Building, Key, Save, AlertCircle, CheckCircle2 } from 'lucide-vue-next'
 

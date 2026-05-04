@@ -31,6 +31,7 @@
                      </div>
                      <div class="flex items-center gap-4">
                         <button 
+                          v-if="can('evaluate', 'projects')"
                           @click="isEvaluating = true"
                           class="bg-white text-primary px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2"
                         >
@@ -61,6 +62,7 @@
                      NHÂN SỰ DỰ ÁN
                   </h3>
                   <button 
+                    v-if="can('allocate', 'projects')"
                     @click="isAssigning = true"
                     class="px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg"
                   >
@@ -80,7 +82,7 @@
                               <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">{{ ass.role?.name }}</p>
                            </div>
                         </div>
-                        <button @click="removeAssignment(ass.id)" class="p-2 text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button v-if="can('allocate', 'projects')" @click="removeAssignment(ass.id)" class="p-2 text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-opacity">
                            <Trash2 class="w-4 h-4" />
                         </button>
                      </div>
@@ -136,7 +138,7 @@
          </div>
 
          <!-- Right Column: Mini Dashboard -->
-         <div class="space-y-6">
+         <div v-if="can('view_financial', 'projects')" class="space-y-6">
             <div class="bg-white p-6 rounded-3xl border border-outline-variant shadow-sm space-y-8">
                
                <!-- Contract Completion Progress -->
@@ -271,10 +273,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
 import NavigationLayout from '@/components/NavigationLayout.vue'
 import InfoBox from '@/components/InfoBox.vue'
 import { Rocket, Users, Plus, Trash2, ArrowLeft, Building, Shield, ChevronRight, Briefcase, Calendar, DollarSign, X, AlertTriangle, ShieldCheck, MessageSquare, History } from 'lucide-vue-next'
+import { usePermissions } from '../composables/usePermissions'
+
+const { can } = usePermissions()
 
 const route = useRoute()
 const router = useRouter()

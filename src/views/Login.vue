@@ -71,7 +71,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
 import { ShieldCheck, ArrowRight, AlertCircle } from 'lucide-vue-next'
 
 const email = ref('')

@@ -18,6 +18,7 @@
              </select>
           </div>
           <button 
+            v-if="can('create', 'reports')"
             @click="isModalOpen = true"
             class="px-6 py-3 bg-primary text-white rounded-xl font-bold flex items-center gap-2 shadow-xl hover:-translate-y-0.5 transition-all"
           >
@@ -204,9 +205,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { supabase } from '#/supabase'
+import { supabase } from '../../lib/supabase'
 import NavigationLayout from '@/components/NavigationLayout.vue'
 import { FileText, Plus, Calendar, ClipboardCheck, AlertCircle, CheckCircle2, MoreHorizontal, User } from 'lucide-vue-next'
+import { usePermissions } from '../composables/usePermissions'
+
+const { can } = usePermissions()
 
 const reports = ref<any[]>([])
 const projects = ref<any[]>([])

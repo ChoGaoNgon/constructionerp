@@ -116,6 +116,28 @@ ADD COLUMN IF NOT EXISTS expected_end_date DATE;
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all for authenticated on reports" ON public.reports USING (auth.role() = 'authenticated');
 
+-- 9. RBAC Permissions
+DROP TABLE IF EXISTS public.role_permissions;
+DROP TABLE IF EXISTS public.user_permissions;
+
+CREATE TABLE public.role_permissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  role TEXT NOT NULL,
+  resource TEXT NOT NULL,
+  actions JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(role, resource)
+);
+
+CREATE TABLE public.user_permissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.employees(id) ON DELETE CASCADE,
+  resource TEXT NOT NULL,
+  actions JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, resource)
+);
+
 -- Seed basic Project Roles
 INSERT INTO public.project_roles (name, code) VALUES 
 ('Phó Giám Đốc', 'PGD'),
