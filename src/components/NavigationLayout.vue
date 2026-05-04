@@ -107,7 +107,7 @@ import {
 import { supabase } from '../../lib/supabase'
 import { usePermissions } from '../composables/usePermissions'
 
-const { can, isSuperAdmin, loadPermissions } = usePermissions()
+const { can, isSuperAdmin, loadPermissions, clearPermissions } = usePermissions()
 
 defineProps<{
   activeTab: string
@@ -171,6 +171,7 @@ onMounted(async () => {
 
 const handleLogout = async () => {
   await supabase.auth.signOut()
+  clearPermissions()
   router.push('/login')
 }
 </script>

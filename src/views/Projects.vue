@@ -49,7 +49,7 @@
               </div>
               <div class="flex items-start justify-between gap-4 min-h-[3.5rem]">
                  <h3 class="text-lg font-black text-primary uppercase leading-tight line-clamp-2">{{ p.name }}</h3>
-                 <button v-if="can('delete', 'projects')" @click.prevent="deleteProject(p.id)" class="text-red-500/50 hover:text-red-600 hover:bg-red-50 p-2 rounded-full transition-colors" title="Xóa dự án">
+                 <button v-if="can('delete', 'projects')" @click.stop.prevent="deleteProject(p.id)" class="text-red-500/50 hover:text-red-600 hover:bg-red-50 p-2 rounded-full transition-colors" title="Xóa dự án">
                     <Trash2 class="w-4 h-4" />
                  </button>
               </div>

@@ -10,8 +10,31 @@ const userPermissions = ref<AppPermission[]>([])
 const systemRole = ref<string>('STAFF')
 const isSuperAdmin = computed(() => systemRole.value === 'ADMIN')
 
+const CACHE_KEY = 'app_permissions_cache'
+
 export function usePermissions() {
-  const loadPermissions = async (userId?: string) => {
+  const clearPermissions = () => {
+    userPermissions.value = []
+    systemRole.value = 'STAFF'
+    localStorage.removeItem(CACHE_KEY)
+  }
+
+  const loadPermissions = async (userId?: string, forceRefresh = false) => {
+    // Try to load from cache first if not forcing refresh
+    if (!forceRefresh) {
+      const cached = localStorage.getItem(CACHE_KEY)
+      if (cached) {
+        try {
+          const { role, perms } = JSON.parse(cached)
+          systemRole.value = role
+          userPermissions.value = perms
+          return
+        } catch (e) {
+          console.error('Failed to parse cached permissions', e)
+        }
+      }
+    }
+
     let currentUserId = userId
     if (!currentUserId) {
       const { data: userData, error: userError } = await supabase.auth.getUser()
@@ -96,6 +119,12 @@ export function usePermissions() {
     })
 
     userPermissions.value = permsArray
+
+    // Save to cache
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      role: systemRole.value,
+      perms: permsArray
+    }))
   }
 
   const can = (action: string, resource: string) => {
@@ -106,6 +135,7 @@ export function usePermissions() {
   return {
     can,
     loadPermissions,
+    clearPermissions,
     systemRole: readonly(systemRole),
     isSuperAdmin
   }
