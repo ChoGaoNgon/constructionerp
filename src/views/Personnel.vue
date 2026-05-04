@@ -72,8 +72,17 @@
                       v-if="can('update', 'users')"
                       @click="openModal(emp)"
                       class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                      title="Sửa"
                     >
                       <Edit2 class="w-4 h-4" />
+                    </button>
+                    <button 
+                      v-if="can('delete', 'users') && emp.system_role !== 'ADMIN'"
+                      @click="handleDelete(emp)"
+                      class="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-all ml-2"
+                      title="Xóa"
+                    >
+                      <Trash2 class="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
@@ -182,15 +191,48 @@
            </form>
         </div>
       </div>
+
+      <!-- Delete Confirmation Modal -->
+      <div v-if="isDeleteConfirmOpen" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
+          <div class="p-6 text-center">
+            <div class="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 class="w-8 h-8" />
+            </div>
+            <h3 class="text-xl font-black text-primary uppercase mb-2">Xác nhận xóa</h3>
+            <p class="text-on-surface-variant text-sm mb-6">
+              Bạn có chắc muốn xóa nhân sự <span class="font-bold text-primary">{{ empToDelete?.name }}</span>?<br/>
+              Toàn bộ dữ liệu liên quan đến nhân sự này sẽ bị xóa vĩnh viễn.
+            </p>
+            <div class="flex gap-3">
+              <button 
+                @click="isDeleteConfirmOpen = false"
+                class="flex-1 py-3 bg-surface-container-low text-on-surface-variant rounded-xl font-bold hover:bg-surface-container-high transition-colors"
+                :disabled="loading"
+              >
+                HỦY
+              </button>
+              <button 
+                @click="confirmDelete"
+                class="flex-1 py-3 bg-error text-white rounded-xl font-black shadow-lg shadow-error/20 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                :disabled="loading"
+              >
+                {{ loading ? 'ĐANG XÓA...' : 'XÓA NGAY' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </NavigationLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { supabase } from '../../lib/supabase'
+import { supabase, supabaseUrl, supabaseKey } from '../../lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import NavigationLayout from '@/components/NavigationLayout.vue'
-import { Users, Plus, Edit2, Shield, Search, X, Check, Building } from 'lucide-vue-next'
+import { Users, Plus, Edit2, Shield, Search, X, Check, Building, Trash2 } from 'lucide-vue-next'
 import { usePermissions } from '../composables/usePermissions'
 
 const { can } = usePermissions()
@@ -199,6 +241,8 @@ const employees = ref<any[]>([])
 const departments = ref<any[]>([])
 const loading = ref(true)
 const isModalOpen = ref(false)
+const isDeleteConfirmOpen = ref(false)
+const empToDelete = ref<any>(null)
 const currentEmp = ref<any>(null)
 const formData = ref({
   name: '',
@@ -286,7 +330,17 @@ async function handleSubmit() {
         return
       }
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Create a temporary client that doesn't persist the session
+      // This prevents the current admin session from being replaced by the new user
+      const tempSupabase = createClient(supabaseUrl || '', supabaseKey || '', {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false
+        }
+      })
+
+      const { data: authData, error: authError } = await tempSupabase.auth.signUp({
         email: formData.value.email,
         password: formData.value.password,
         options: {
@@ -317,6 +371,48 @@ async function handleSubmit() {
     fetchData()
   } catch (err: any) {
     alert("Lỗi: " + err.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleDelete(emp: any) {
+  empToDelete.value = emp
+  isDeleteConfirmOpen.value = true
+}
+
+async function confirmDelete() {
+  if (!empToDelete.value) return
+  
+  try {
+    loading.value = true
+    const empId = empToDelete.value.id
+    
+    // 1. Xóa trong bảng project_assignments
+    const { error: err1 } = await supabase.from('project_assignments').delete().eq('employee_id', empId)
+    if (err1) console.error("Error deleting assignments:", err1)
+    
+    // 2. Xóa trong bảng user_permissions
+    const { error: err2 } = await supabase.from('user_permissions').delete().eq('user_id', empId)
+    if (err2) console.error("Error deleting user perms:", err2)
+    
+    // 3. Xóa trong bảng reports
+    const { error: err3 } = await supabase.from('reports').delete().eq('employee_id', empId)
+    if (err3) console.error("Error deleting reports:", err3)
+
+    // 4. Nullify references in projects table (evaluator_id)
+    const { error: err4 } = await supabase.from('projects').update({ evaluator_id: null }).eq('evaluator_id', empId)
+    if (err4) console.error("Error nullifying project evaluator:", err4)
+    
+    // 5. Xóa trong bảng employees
+    const { error } = await supabase.from('employees').delete().eq('id', empId)
+    if (error) throw error
+    
+    isDeleteConfirmOpen.value = false
+    empToDelete.value = null
+    fetchData()
+  } catch (err: any) {
+    alert("Lỗi khi xóa: " + err.message)
   } finally {
     loading.value = false
   }
