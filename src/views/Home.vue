@@ -17,7 +17,16 @@ const router = useRouter()
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
   if (session) {
-    router.push('/dashboard')
+    const { data: empData } = await supabase
+      .from('employees')
+      .select('system_role')
+      .eq('id', session.user.id)
+      .single()
+    if (empData && empData.system_role === 'ADMIN') {
+      router.push('/dashboard')
+    } else {
+      router.push('/reports')
+    }
   } else {
     router.push('/login')
   }

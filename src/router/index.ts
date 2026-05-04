@@ -85,7 +85,17 @@ router.beforeEach(async (to, from, next) => {
     if (to.meta.requiresAuth && !session) {
       next('/login')
     } else if (to.path === '/login' && session) {
-      next('/dashboard')
+      const { data: empData } = await supabase
+        .from('employees')
+        .select('system_role')
+        .eq('id', session.user.id)
+        .single()
+      
+      if (empData && empData.system_role === 'ADMIN') {
+        next('/dashboard')
+      } else {
+        next('/reports')
+      }
     } else {
       next()
     }

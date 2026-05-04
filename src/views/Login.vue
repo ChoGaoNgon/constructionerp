@@ -91,7 +91,19 @@ onMounted(async () => {
   }
 
   const { data: { session } } = await supabase.auth.getSession()
-  if (session) router.push('/dashboard')
+  if (session) {
+    const { data: empData } = await supabase
+      .from('employees')
+      .select('system_role')
+      .eq('id', session.user.id)
+      .single()
+    
+    if (empData && empData.system_role === 'ADMIN') {
+      router.push('/dashboard')
+    } else {
+      router.push('/reports')
+    }
+  }
 })
 
 const handleLogin = async () => {
@@ -139,7 +151,18 @@ const handleLogin = async () => {
         clearTimeout(timeoutId)
         return
       }
-      await router.push('/dashboard')
+      
+      const { data: empData } = await supabase
+        .from('employees')
+        .select('system_role')
+        .eq('id', data.session.user.id)
+        .single()
+      
+      if (empData && empData.system_role === 'ADMIN') {
+        await router.push('/dashboard')
+      } else {
+        await router.push('/reports')
+      }
     } else {
       let msg = error.message
       if (msg.includes("Email not confirmed")) {
