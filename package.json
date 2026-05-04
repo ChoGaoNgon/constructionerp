@@ -14,7 +14,7 @@
     "@supabase/supabase-js": "^2.105.0",
     "@tailwindcss/postcss": "^4.2.4",
     "@vitejs/plugin-vue": "^6.0.6",
-    "apexcharts": "^4.1.0",
+    "apexcharts": "^5.10.6",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "lucide-vue-next": "^0.471.0",
