@@ -8,7 +8,7 @@ export default defineConfig({
   envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   plugins: [
     vue(),
-    VitePWA({
+    /* VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
@@ -20,7 +20,7 @@ export default defineConfig({
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png' // It will fallback if not found, usually we put these in public
+            type: 'image/png'
           },
           {
             src: 'pwa-512x512.png',
@@ -29,7 +29,7 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }) */
   ],
   resolve: {
     alias: {

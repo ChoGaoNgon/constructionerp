@@ -23,9 +23,16 @@ Một hệ thống quản lý các dự án xây dựng dựa trên thời gian 
 - **Tính toán thông minh**: Sổ cái tự động tính toán tổng dư nợ, tự phân tích ngưỡng thu hồi tạm ứng (VD: Bắt buộc thu hồi khi đạt 80% giá trị hợp đồng), cùng các dữ liệu thu hồi, nghiệm thu lũy kế các kì trước.
 - **Dự toán các kì thanh toán**: Cho phép thiết lập dự toán lịch trình ở quá trình khởi tạo và truy xuất điền tự động khi chốt kỳ thanh toán mà không phải gõ số tài chính lại từ đầu.
 
-### 3. Cấp bậc nhân sự & Chức vụ
+### 3. Cấp bậc nhân sự & Bảo mật
 - **Quyền theo hệ thống (System Roles)**: Mapping phân quyền điều hướng tổng quát (`ADMIN`, `CEO`, `LEADER`, `STAFF`).
-- **Nhiệm vụ trên dự án (Project Roles)**: Bảng theo ngữ cảnh sẽ gán nhân sự vào vị trí tương ứng (`PGD`, `BCH`, `QS`, `Accountant`) nhằm mục đích thể hiện rõ đầu mối trên hợp đồng.
+- **Nghiệm vụ trên dự án (Project Roles)**: Bảng theo ngữ cảnh sẽ gán nhân sự vào vị trí tương ứng (`PGD`, `BCH`, `QS`, `Accountant`).
+- **Kiến trúc Auth & Cache**:
+    - Sử dụng cơ chế cache quyền tại `localStorage` để tối ưu SEO và Performance (SWR-like pattern).
+    - Cô lập phiên làm việc (Session Isolation) khi thực hiện các tác vụ quản trị Auth để tránh xung đột User Session.
+
+### 4. Báo cáo hiện trường (Site Reporting)
+- **Kỳ báo cáo**: Hỗ trợ tách biệt dữ liệu Hàng ngày, Hàng tuần, Hàng tháng.
+- **Mobile Optimized**: Giao diện báo cáo được thiết kế "Mobile-First" với Modal slide-up và Card layout cho phép tương tác thuận tiện trên điện thoại smartphone.
 
 Để xem thêm luồng diễn giải kỹ thuật và logic nghiệp vụ, hãy xem tài liệu [Chi tiết Nghiệp Vụ](business_detail.md).
 

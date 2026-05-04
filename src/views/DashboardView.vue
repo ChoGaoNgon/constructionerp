@@ -231,7 +231,8 @@ onMounted(async () => {
         total_recovered,
         pending_receivable: total_completed - total_received
       }
-      criticalProjects.value = processed.filter(p => p.has_recovery_alert || p.status_evaluation === 'RISK' || p.status_evaluation === 'WARNING')
+      // Critical Projects Tracking
+    criticalProjects.value = processed.filter(p => p.has_recovery_alert || p.status_evaluation === 'RISK' || p.status_evaluation === 'WARNING')
     }
   } catch (err: any) {
     error.value = err.message

@@ -71,11 +71,15 @@ Hệ thống được xây dựng với các phân hệ liên kết chặt chẽ
 2.  **Vai Trò Do Hệ Thống (System Roles) VS Vai Trò Trong Dự Án (Project Roles)**:
     -   **Quyền Hệ Thống** (`ADMIN`, `CEO`, `LEADER`, `STAFF`): Mapping giới hạn giao thức ở menu ngoài hệ thống (Ví dụ chỉ ADMIN và CEO được cung quyền thấy sổ phân hạng tài chính toàn quyền của danh sách các dự án).
     -   **Quyền Đóng Dự Án** (`PGD`, `BCH`, `QS`, `ACCOUNTANT`): Ở tính năng thuộc `project_assignments` giới hạn chức phân chức danh cụ thể định mức công vụ mà 1 user chuyên lo. Hiện lúc này vai trò là dạng tag phân luồng ghi lại công danh là chính yếu, chưa đi sâu chặn luồng truy cập từng file.
+3.  **Cơ Chế Bảo Mật & Hiệu Năng**:
+    -   **Phân Quyền Phía Client (Permission Caching)**: Hệ thống sử dụng `localStorage` để lưu trữ bộ quyền và vai trò sau khi đăng nhập thành công. Điều này giúp giảm thiểu việc gọi database (read spam) mỗi khi chuyển trang, đảm bảo tốc độ phản hồi tức thì cho giao diện. Bộ nhớ đệm được xóa sạch (clear) ngay khi người dùng đăng xuất.
+    -   **Quản Lý Tài Khoản (Session Isolation)**: Khi Admin tạo nhân viên mới, hệ thống sử dụng một thực thể Supabase Client tạm thời (`persistSession: false`). Kỹ thuật này giúp Admin khởi tạo tài khoản Auth mới cho nhân viên mà không bị "đá" phiên đăng nhập hiện tại, đảm bảo luồng công việc liên tục.
 
 ### D. Hệ Sổ Công Trình Cấp Tuần/Ngày (Báo cáo hiện trường)
 
-1.  **Biên bản (Field Reporting)**: Những người trực tiếp tại bối cảnh ban quản lý xây lắp đóng góp nhật ký.
-2.  **Các thuộc tính tính toán**:
+1.  **Phân Loại Biên Bản (Report Categorization)**: Nhật ký hiện trường được chia thành 3 nhóm: `HÀNG NGÀY`, `HÀNG TUẦN`, `HÀNG THÁNG`. Việc phân loại này giúp Ban quản lý dễ dàng lọc dữ liệu theo kỳ báo cáo mong muốn.
+2.  **Quản Lý Danh Sách & Phân Trang**: Trong chi tiết dự án, danh sách báo cáo được hiển thị qua hệ thống Tab và cơ chế phân trang (5 bản ghi/trang). Dữ liệu được sắp xếp giảm dần (Mới nhất lên trên cùng) để người dùng nắm bắt biến động gần nhất.
+3.  **Các thuộc tính tính toán**:
     -   `progress_percent` (Trăm tiến độ): Tỉ lệ tính tay đo thông số tiến trình đã đóng hoàn tất.
     -   `actual_cost` (Chi Phí Mất Đi / Tốn kém): Thu vào số hụt chi phí tại chổ hiện thời.
     -   Mã số quy chuẩn lưu lại đánh giá text văn bản: `issues` (những phát sinh rủi ro), `resolutions` (giải trình phương án sửa lỗi), `next_tasks` (Bảng kê khai công việc sẽ thi công).
@@ -86,5 +90,6 @@ Hệ thống được xây dựng với các phân hệ liên kết chặt chẽ
 ## 4. Đặc thù và Kiến trúc UI/UX Giao Diện
 
 -   **Mật Độ Thể Hiện Tốc Độ Thông Tin Cao (High Density)**: Do bộ phận dự án yêu cầu lượng số liệu lớn và chập chững, giao diện thiết kết thu hẹp diện tích table, tạo kiểu bảng mác thu hẹp (VD kiểu font chữ dùng thông số Tailwind CSS tracking `text-[10px] tracking-widest`) kết tập vào luân lý đổ phân màu làm rõ (Tím đậm cho màu tổng tiền nhận giá trị mới thanh toán, Xanh lá cho việc nhận/bù hoàn vốn tạm ứng, Vàng rủi ro cho mốc cảnh biến và đo số nợ nần vượt thời tính).
+-   **Tối Ưu Mobile (Mobile-First Experience)**: Phân hệ Báo cáo công việc và Form lập báo cáo được thiết kế ưu tiên cho thiết bị di động. Các nút bấm có kích thước lớn (Min 44px), Modal dạng Slide-up từ dưới lên trên mobile, và bảng biểu được chuyển đổi thành dạng Card Layout giúp cán bộ hiện trường thao tác nhanh bằng một tay ngay trên công trường.
 -   **Tích hợp Popup Window Modal Window (Contextual Interactions)**: Các phân nhóm quy chuẩn có độ sâu can thiệp cao (ví dụ chèn bảng tự chép tự trích số liệu lên Form Kế Hoạch Đợt Thanh Toán) đều dùng kĩ xảo nhấc Pop-up cửa nhô (`z-[110]`), như vậy khiến trang app form chính thức không bao giờ bị trôi nền xóa số hiện đang dỡ.
 -   **Máy Trình Tòa Toán Real-time Live Calculate (Real-time Math)**: Sự kiện trích sổ form ném theo chu trình live real-time ở cấp tốc 1 mili-giây khi click chuột gõ dòng, thông qua `watch` và `computed` trong lõi lập trình máy con của Vue theo dấu mọi dao động tính toán số tiền chuẩn về trả kết quả tương ứng luôn lập tức mà chẳng phải click refresh nút xem giá thử.
