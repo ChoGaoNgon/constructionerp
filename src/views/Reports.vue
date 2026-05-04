@@ -97,9 +97,9 @@
       </div>
 
       <div v-if="isModalOpen" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-4xl max-h-[92vh] sm:rounded-[2.5rem] rounded-t-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300">
-           <form @submit.prevent="handleSubmit" class="h-full flex flex-col">
-              <div class="flex-1 overflow-y-auto">
+        <div class="bg-white w-full max-w-4xl max-h-[90vh] flex flex-col sm:rounded-[2.5rem] rounded-t-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300">
+           <form @submit.prevent="handleSubmit" class="flex-1 flex flex-col min-h-0">
+              <div class="flex-1 overflow-y-auto overscroll-contain">
                  <div class="flex flex-col md:flex-row md:divide-x divide-outline-variant">
                   <!-- Left Side: General Info -->
                   <div class="p-6 md:p-10 space-y-6 md:space-y-8 flex-1">
