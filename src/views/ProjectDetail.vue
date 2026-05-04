@@ -93,20 +93,27 @@
 
             <!-- Reports History -->
             <div class="bg-white rounded-3xl border border-outline-variant shadow-sm overflow-hidden">
-               <div class="p-6 border-b border-outline-variant flex items-center justify-between">
+               <div class="p-6 border-b border-outline-variant flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <h3 class="text-xl font-black text-primary uppercase flex items-center gap-3">
                      <History class="w-6 h-6" />
                      BÁO CÁO GẦN ĐÂY
                   </h3>
-                  <button 
-                    @click="router.push('/reports')"
-                    class="text-xs font-black text-primary uppercase tracking-widest hover:underline"
-                  >
-                     XEM TẤT CẢ
-                  </button>
+                  
+                  <div class="flex bg-surface-container-low p-1 rounded-xl">
+                    <button 
+                      v-for="tab in [{id: 'DAILY', label: 'Ngày'}, {id: 'WEEKLY', label: 'Tuần'}, {id: 'MONTHLY', label: 'Tháng'}]"
+                      :key="tab.id"
+                      @click="activeReportTab = tab.id; reportPage = 1"
+                      class="px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                      :class="activeReportTab === tab.id ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'"
+                    >
+                      {{ tab.label }}
+                    </button>
+                  </div>
                </div>
+               
                <div class="divide-y divide-outline-variant/30">
-                  <div v-for="report in reports" :key="report.id" class="p-6 hover:bg-surface-container-lowest transition-colors">
+                  <div v-for="report in pagedReports" :key="report.id" class="p-6 hover:bg-surface-container-lowest transition-colors">
                      <div class="flex justify-between items-start mb-4">
                         <div class="flex items-center gap-3">
                            <div class="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center font-bold text-primary text-xs">
@@ -132,7 +139,33 @@
                         </p>
                      </div>
                   </div>
-                  <p v-if="reports.length === 0" class="p-8 text-center text-on-surface-variant italic opacity-50">Chưa có báo cáo nào cho dự án này.</p>
+                  
+                  <div v-if="filteredReports.length > 0" class="p-4 bg-surface-container-lowest flex items-center justify-between border-t border-outline-variant/30">
+                    <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">
+                      Trang {{ reportPage }} / {{ totalReportPages }}
+                    </p>
+                    <div class="flex gap-2">
+                      <button 
+                        @click="reportPage > 1 && reportPage--"
+                        :disabled="reportPage === 1"
+                        class="p-2 rounded-lg border border-outline-variant hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+                      >
+                        <ChevronLeft class="w-4 h-4" />
+                      </button>
+                      <button 
+                        @click="reportPage < totalReportPages && reportPage++"
+                        :disabled="reportPage === totalReportPages"
+                        class="p-2 rounded-lg border border-outline-variant hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+                      >
+                        <ChevronRight class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <p v-if="filteredReports.length === 0" class="p-12 text-center text-on-surface-variant italic opacity-50 flex flex-col items-center gap-2">
+                    <History class="w-8 h-8 opacity-20" />
+                    Chưa có báo cáo {{ activeReportTab.toLowerCase() === 'daily' ? 'hàng ngày' : activeReportTab.toLowerCase() === 'weekly' ? 'hàng tuần' : 'hàng tháng' }} nào.
+                  </p>
                </div>
             </div>
          </div>
@@ -276,7 +309,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../../lib/supabase'
 import NavigationLayout from '@/components/NavigationLayout.vue'
 import InfoBox from '@/components/InfoBox.vue'
-import { Rocket, Users, Plus, Trash2, ArrowLeft, Building, Shield, ChevronRight, Briefcase, Calendar, DollarSign, X, AlertTriangle, ShieldCheck, MessageSquare, History } from 'lucide-vue-next'
+import { Rocket, Users, Plus, Trash2, ArrowLeft, Building, Shield, ChevronLeft, ChevronRight, Briefcase, Calendar, DollarSign, X, AlertTriangle, ShieldCheck, MessageSquare, History } from 'lucide-vue-next'
 import { usePermissions } from '../composables/usePermissions'
 
 const { can } = usePermissions()
@@ -288,6 +321,9 @@ const projectId = route.query.id as string
 const project = ref<any>(null)
 const assignments = ref<any[]>([])
 const reports = ref<any[]>([])
+const activeReportTab = ref('DAILY')
+const reportPage = ref(1)
+const reportPageSize = 5
 const payments = ref<any[]>([])
 const employees = ref<any[]>([])
 const roles = ref<any[]>([])
@@ -322,6 +358,20 @@ const showAdvanceWarning = computed(() => {
   return completionProgress.value >= 80 && recoveryProgress.value < 100
 })
 
+const filteredReports = computed(() => {
+  return reports.value
+    .filter(r => r.type === activeReportTab.value)
+    .sort((a, b) => new Date(b.report_date).getTime() - new Date(a.report_date).getTime())
+})
+
+const totalReportPages = computed(() => Math.ceil(filteredReports.value.length / reportPageSize))
+
+const pagedReports = computed(() => {
+  const start = (reportPage.value - 1) * reportPageSize
+  const end = start + reportPageSize
+  return filteredReports.value.slice(start, end)
+})
+
 async function fetchProjectData() {
   loading.value = true
   const { data: pData } = await supabase.from('projects').select('*').eq('id', projectId).eq('is_deleted', false).single()
@@ -350,7 +400,6 @@ async function fetchProjectData() {
     .select('*, employee:employees(name)')
     .eq('project_id', projectId)
     .order('report_date', { ascending: false })
-    .limit(10)
 
   if (pData) {
     project.value = pData
