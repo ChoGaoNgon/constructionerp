@@ -17,7 +17,20 @@
         document.body.innerHTML += `<div style="color:red; background:white; position:fixed; top:150px; left:0; z-index:9999; padding:20px;"><h1>UNHANDLED PROMISE</h1><pre>${promiseRejectionEvent.reason}</pre></div>`;
       });
     </script>
-    <div id="app"></div>
+    <div id="app">
+      <div style="font-family: sans-serif; padding: 40px; text-align: center; color: #666;">
+        <h2 style="margin-bottom: 8px;">Đang tải ứng dụng...</h2>
+        <p>Vui lòng đợi vài giây (<span id="loading-timer">0</span>s)</p>
+        <script>
+          let t = 0;
+          setInterval(() => {
+            t++;
+            const el = document.getElementById('loading-timer');
+            if(el) el.innerText = t;
+          }, 1000);
+        </script>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

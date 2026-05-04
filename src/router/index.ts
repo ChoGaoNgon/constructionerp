@@ -79,24 +79,40 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  if (to.meta.requiresAuth && !session) {
-    next('/login')
-  } else if (to.path === '/login' && session) {
-    next('/dashboard')
-  } else {
-    next()
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    if (to.meta.requiresAuth && !session) {
+      next('/login')
+    } else if (to.path === '/login' && session) {
+      next('/dashboard')
+    } else {
+      next()
+    }
+  } catch (err: any) {
+    console.error("Router beforeEach exception:", err)
+    if (to.meta.requiresAuth) {
+      next('/login')
+    } else {
+      next()
+    }
   }
 })
 
 // Handle chunk loading errors when new version is deployed
 router.onError((error, to) => {
+  console.error("Router navigation error:", error)
   if (
     error.message.includes('Failed to fetch dynamically imported module') ||
     error.message.includes('Importing a module script failed')
   ) {
-    window.location.href = to.fullPath
+    // Only reload once by checking session storage to prevent infinite loops
+    if (!sessionStorage.getItem('chunk-failed-reload')) {
+      sessionStorage.setItem('chunk-failed-reload', 'true')
+      window.location.href = to.fullPath
+    } else {
+      console.error("Chunk reload infinite loop detected, aborting reload:", error)
+    }
   }
 })
 

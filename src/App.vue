@@ -14,7 +14,7 @@ let authListener: any = null
 onMounted(() => {
   const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
     if (session) {
-      await loadPermissions()
+      await loadPermissions(session.user.id)
     }
   })
   authListener = data.subscription

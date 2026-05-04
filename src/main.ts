@@ -12,5 +12,8 @@ app.config.errorHandler = (err, instance, info) => {
 }
 
 app.use(router)
-app.use(VueApexCharts);
-app.mount('#app')
+app.use(VueApexCharts)
+
+router.isReady().then(() => {
+  app.mount('#app')
+})

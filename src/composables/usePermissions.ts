@@ -11,14 +11,18 @@ const systemRole = ref<string>('STAFF')
 const isSuperAdmin = computed(() => systemRole.value === 'ADMIN')
 
 export function usePermissions() {
-  const loadPermissions = async () => {
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-    if (userError || !userData?.user) return
+  const loadPermissions = async (userId?: string) => {
+    let currentUserId = userId
+    if (!currentUserId) {
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      if (userError || !userData?.user) return
+      currentUserId = userData.user.id
+    }
 
     const { data: empData, error: empError } = await supabase
       .from('employees')
       .select('system_role')
-      .eq('id', userData.user.id)
+      .eq('id', currentUserId)
       .single()
 
     if (empError) console.error('Error fetching employee role:', empError.message)
@@ -43,7 +47,7 @@ export function usePermissions() {
     const { data: userPerms, error: upError } = await supabase
       .from('user_permissions')
       .select('resource, actions')
-      .eq('user_id', userData.user.id)
+      .eq('user_id', currentUserId)
 
     if (upError && upError.code !== '42P01') {
       console.error('Error fetching user permissions:', upError.message)
