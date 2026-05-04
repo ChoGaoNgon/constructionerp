@@ -137,7 +137,7 @@ const allMenuSections = [
     items: [
       { id: 'projects', label: 'Danh sách dự án', icon: Rocket, href: '/projects', resource: 'projects' },
       { id: 'project-roles', label: 'Chức danh dự án', icon: Briefcase, href: '/project-roles', resource: 'project-roles' },
-      { id: 'reports', label: 'Báo cáo định kỳ', icon: FileText, href: '/reports', resource: 'reports' },
+      { id: 'reports', label: 'Báo cáo định kỳ', icon: FileText, href: '/', resource: 'reports' },
     ]
   },
   {

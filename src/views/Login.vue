@@ -101,7 +101,7 @@ onMounted(async () => {
     if (empData && empData.system_role === 'ADMIN') {
       router.push('/dashboard')
     } else {
-      router.push('/reports')
+      router.push('/')
     }
   }
 })
@@ -161,7 +161,7 @@ const handleLogin = async () => {
       if (empData && empData.system_role === 'ADMIN') {
         await router.push('/dashboard')
       } else {
-        await router.push('/reports')
+        await router.push('/')
       }
     } else {
       let msg = error.message

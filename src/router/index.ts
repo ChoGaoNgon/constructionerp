@@ -6,8 +6,9 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: () => import('../views/Home.vue')
+      name: 'reports',
+      component: () => import('../views/Reports.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/login',
@@ -30,12 +31,6 @@ const router = createRouter({
       path: '/personnel',
       name: 'personnel',
       component: () => import('../views/Personnel.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/reports',
-      name: 'reports',
-      component: () => import('../views/Reports.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -94,7 +89,7 @@ router.beforeEach(async (to, from, next) => {
       if (empData && empData.system_role === 'ADMIN') {
         next('/dashboard')
       } else {
-        next('/reports')
+        next('/')
       }
     } else {
       next()
